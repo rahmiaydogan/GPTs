@@ -1,94 +1,1008 @@
-// script.js
-document.addEventListener('DOMContentLoaded', () => {
-    const cardsContainer = document.getElementById('gpt-cards-container');
-    const searchBar = document.getElementById('search-bar');
-
-    // gptData'nın data.js dosyasından geldiğini varsayıyoruz
-    if (typeof gptData === 'undefined' || !Array.isArray(gptData)) {
-        console.error('GPT verisi bulunamadı veya hatalı formatta.');
-        cardsContainer.innerHTML = "<p>GPT verileri yüklenirken bir sorun oluştu.</p>";
-        return;
-    }
-    
-    // console.log("Yüklenecek GPT Sayısı:", gptData.length); // Yüklenecek kart sayısını kontrol et
-
-    function renderCards(dataToRender) {
-        cardsContainer.innerHTML = ''; // Mevcut kartları temizle
-        if (dataToRender.length === 0) {
-            cardsContainer.innerHTML = '<p style="text-align:center; grid-column: 1 / -1;">Aramanızla eşleşen GPT bulunamadı.</p>';
-            return;
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPT Tanıtım Sayfası</title>
+    <style>
+        :root {
+            --color-bg-gray: #f0f0f0; /* Yumuşak Gri */
+            --color-bg-cream: #fdfbf5; /* Yumuşak Krem */
+            --color-bg-blue: #e6f0f5;  /* Yumuşak Mavi */
+            --color-bg-white: #ffffff; /* Beyaz */
+            --color-text: #333333;
+            --color-text-light: #555555;
+            --color-shadow: rgba(0, 0, 0, 0.1);
+            --button-bg-cream: #edeae0;
+            --button-bg-blue: #cce0eb;
+            --button-text: #2c3e50;
         }
 
-        dataToRender.forEach(gpt => {
-            const card = document.createElement('div');
-            card.classList.add('gpt-card');
-            card.dataset.name = gpt['GPT Adı'].toLowerCase();
-            card.dataset.description = gpt['Açıklama'].toLowerCase();
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--color-bg-gray);
+            color: var(--color-text);
+            line-height: 1.6;
+        }
 
-            const title = document.createElement('h3');
-            title.textContent = gpt['GPT Adı'];
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
 
-            const description = document.createElement('p');
-            description.classList.add('description');
-            description.textContent = gpt['Açıklama'];
+        header h1 {
+            color: var(--color-text-light);
+        }
 
-            const chats = document.createElement('p');
-            chats.classList.add('info');
-            chats.innerHTML = `<strong>Sohbet:</strong> ${gpt['Sohbet Sayısı']}`;
+        #search-bar {
+            width: 80%;
+            max-width: 600px;
+            padding: 12px 15px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 25px;
+            font-size: 1rem;
+            box-shadow: 0 2px 5px var(--color-shadow);
+        }
 
-            const access = document.createElement('p');
-            access.classList.add('info');
-            access.innerHTML = `<strong>Erişim:</strong> ${gpt['Erişim Bilgisi']}`;
+        #search-bar:focus {
+            outline: none;
+            border-color: var(--button-bg-blue);
+            box-shadow: 0 0 8px rgba(173, 216, 230, 0.7);
+        }
 
-            const buttonsDiv = document.createElement('div');
-            buttonsDiv.classList.add('buttons');
+        #gpt-cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            padding: 0;
+        }
 
-            const copyButton = document.createElement('button');
-            copyButton.classList.add('copy-btn');
-            copyButton.textContent = 'Kopyala';
-            copyButton.addEventListener('click', () => {
-                navigator.clipboard.writeText(gpt['URL']).then(() => {
-                    copyButton.textContent = 'Kopyalandı!';
-                    setTimeout(() => {
-                        copyButton.textContent = 'Kopyala';
-                    }, 2000);
-                }).catch(err => {
-                    console.error('URL kopyalanamadı: ', err);
-                    alert('URL kopyalanamadı. Lütfen konsolu kontrol edin.');
+        .gpt-card {
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px var(--color-shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 280px; 
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .gpt-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .gpt-card:nth-child(4n+1) { background-color: var(--color-bg-cream); }
+        .gpt-card:nth-child(4n+2) { background-color: var(--color-bg-blue); }
+        .gpt-card:nth-child(4n+3) { background-color: var(--color-bg-white); }
+        .gpt-card:nth-child(4n) { background-color: var(--color-bg-gray); border: 1px solid #ddd; }
+
+
+        .gpt-card h3 {
+            font-weight: bold;
+            font-size: 1.25rem;
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: var(--color-text);
+        }
+
+        .gpt-card .description {
+            font-size: 0.9rem;
+            color: var(--color-text-light);
+            margin-bottom: 15px;
+            flex-grow: 1;
+            overflow-y: auto; 
+            max-height: 100px; 
+        }
+
+        .gpt-card .info {
+            font-size: 0.8rem;
+            color: #777;
+            margin-bottom: 5px;
+        }
+
+        .gpt-card .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: auto; 
+        }
+
+        .gpt-card button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            min-width: 100px;
+        }
+
+        .gpt-card button:hover {
+            opacity: 0.85;
+        }
+        .gpt-card button:active {
+            transform: scale(0.98);
+        }
+
+        .gpt-card .copy-btn {
+            background-color: var(--button-bg-cream);
+            color: var(--button-text);
+        }
+
+        .gpt-card .go-btn {
+            background-color: var(--button-bg-blue);
+            color: var(--button-text);
+        }
+
+        @media (max-width: 768px) {
+            #gpt-cards-container {
+                grid-template-columns: 1fr;
+            }
+            .gpt-card {
+                min-height: auto;
+            }
+            #search-bar {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>GPT Koleksiyonu</h1>
+        <input type="text" id="search-bar" placeholder="GPT adı veya açıklamasında ara...">
+    </header>
+    <main id="gpt-cards-container">
+        <!-- GPT Kartları JavaScript ile buraya eklenecek -->
+    </main>
+
+    <script>
+        // --- Veri ve Veri Ayrıştırıcı (Eski data.js içeriği) ---
+        const rawData = `
+GPT’lerim
+		
+1	GPT Adı:	Sekreter Hunter 🎯 | MediaCloser
+	Açıklama:	Seni en etkili sekreter aşma teknikleriyle eğiteceğim. Bazen seni zorlayan bir sekreter, bazen de bir satış koçu
+	Sohbet:	2 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-6811ed60f25c8191a2eb6b863e0c3ad3-sekreter-hunter-mediacloser
+		
+		
+		
+2	GPT Adı:	HikayeciGPT
+	Açıklama:	imageCreator Çıktılarından Github girdilerini üretir
+	Sohbet:	4 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-680e18a35ee08191bce12a99c67716d4-hikayecigpt
+		
+		
+		
+3	GPT Adı:	Adtag'de bir arkadaş
+	Açıklama:	Problem mi var? Hadi, dramatik bir çözüm arayalım!
+	Sohbet:	6 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67fad5dc68548191b2e125e9634f0b3b-adtag-de-bir-arkadas
+		
+		
+		
+4	GPT Adı:	🔍 CortexScope Film Filtresi
+	Açıklama:	Derinlik illüzyonlarına karşı zihinsel bağışıklık filtresi.
+	Sohbet:	2 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67f714fa269081919115b5789b29cb26-cortexscope-film-filtresi
+		
+		
+		
+5	GPT Adı:	Evrimsel Nihilist 5
+	Açıklama:	Evrimsel Nihilist, fikirlerinin arkasındaki ihtiyaçları görmeye odaklanır. Kimliğini değil, onu neden kurduğunu anlamaya çalışır. Anlaşılmak isteyen değil, anlamaya hazır olan yanına seslenir.
+	Sohbet:	60+ Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67eca722e8f88191ab0732f3f353fb54-evrimsel-nihilist-5
+		
+		
+		
+6	GPT Adı:	Kripto Portföy Yöneticisi GPT
+	Açıklama:	analiz yapar
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67dddabffb0081918757074e9ad5b61f-kripto-portfoy-yoneticisi-gpt
+		
+		
+		
+7	GPT Adı:	Evrimsel Nihilist 4
+	Açıklama:	
+	Sohbet:	60+ Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67cced7a0ecc8191a29af0056e648d46-evrimsel-nihilist-4
+		
+		
+		
+8	GPT Adı:	evrimsel nihilist 3
+	Açıklama:	nihilistic perspective
+	Sohbet:	10+ Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67c4f3275aa48191b80cbe9c292a7e73-evrimsel-nihilist-3
+		
+		
+		
+9	GPT Adı:	evrimsel nihilist 2
+	Açıklama:	nihilistic perspective
+	Sohbet:	6 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67c36400a9708191a020611a4a33a4b1-evrimsel-nihilist-2
+		
+		
+		
+10	GPT Adı:	evrimsel nihilist 1
+	Açıklama:	nihilistic perspective
+	Sohbet:	4 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67c27b39994881918a3ce9952c3f1c1e-evrimsel-nihilist-1
+		
+		
+		
+11	GPT Adı:	En Zeki GPT
+	Açıklama:	Bu GPT Çok Zekidir.
+	Sohbet:	9 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-67b7858f358481919f17e630ce715edd-en-zeki-gpt
+		
+		
+		
+12	GPT Adı:	Tahir - Yaratıcı Müzik
+	Açıklama:	Fotoğrafçılık ve müzik konusunda teknik bilgi ve yaratıcı tavsiyeler sunar.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-6784f3a9249481918071e97010de2ac3-tahir-yaratici-muzik
+		
+		
+		
+13	GPT Adı:	Personalized Matrix Experience
+	Açıklama:	
+	Sohbet:	Dive into the Matrix universe, guided by Trinity's hidden messages and explore the depths of reality.
+	Erişim:	Sadece ben
+	Url:	https://chatgpt.com/g/g-6784804d64c08191a5ff00b9c71d17f4-personalized-matrix-experience
+		
+		
+		
+14	GPT Adı:	Matrix GPT
+	Açıklama:	Dive into the Matrix universe, guided by Trinity's hidden messages and explore the depths of reality.
+	Sohbet:	
+	Erişim:	Sadece ben
+	Url:	https://chatgpt.com/g/g-67847f1e07c481919a8bf59e4763c40d-matrix-gpt
+		
+		
+		
+15	GPT Adı:	AdTAG - Kampanya Performans İzleme Analizcisi GPT
+	Açıklama:	Devam eden kampanyaların performansını izleyerek gerektiğinde anlık optimizasyon önerileri sunan bir raportördür.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67844f9227848191aad77ea2a98c07c8-adtag-kampanya-performans-izleme-analizcisi-gpt
+		
+		
+		
+16	GPT Adı:	AdTAG - İçerik Takvimi Yöneticisi GPT
+	Açıklama:	Medya kampanyalarının içerik takvimini oluşturan ve optimize eden bir asistan.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67844eb27d70819182862e5399a66066-adtag-icerik-takvimi-yoneticisi-gpt
+		
+		
+		
+17	GPT Adı:	AdTAG - Kanal Seçim Danışmanı GPT
+	Açıklama:	Hedef kitleye ulaşmak için en etkili medya kanallarını öneren bir uzmandır.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67844dbd9540819180793d08bdcd9dea-adtag-kanal-secim-danismani-gpt
+		
+		
+		
+18	GPT Adı:	AdTAG - Medya Bütçe Optimizasyon Uzmanı GPT
+	Açıklama:	Kampanya bütçelerini optimize eden ve verimli bir şekilde dağıtan bir uzmandır.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67844ce18354819191d9b30671625a86-adtag-medya-butce-optimizasyon-uzmani-gpt
+		
+		
+		
+19	GPT Adı:	AdTAG - Medya Planı Simülasyon Uzmanı GPT
+	Açıklama:	Oluşturulan medya planlarının potansiyel sonuçlarını simüle eden bir uzmandır.
+	Sohbet:	1 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67844c646e58819188c0990e85bd984b-adtag-medya-plani-simulasyon-uzmani-gpt
+		
+		
+		
+20	GPT Adı:	AdTAG - Medya Satın Alma Uzmanı GPT
+	Açıklama:	Medya satın alma süreçlerini optimize eden ve en iyi fiyatlarla medya alanları bulan bir uzmandır.
+	Sohbet:	3 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67844bf3ac188191972b57ce4456368f-adtag-medya-satin-alma-uzmani-gpt
+		
+		
+		
+21	GPT Adı:	AdTAG - Rekabet Analizi Uzmanı GPT
+	Açıklama:	Rakiplerin medya kampanyalarını inceleyerek stratejik önerilerde bulunan bir uzmandır.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67844b9a593081918b11889785b75708-adtag-rekabet-analizi-uzmani-gpt
+		
+		
+		
+22	GPT Adı:	AdTAG - ROI ve ROAS Hesaplama Analizcisi GPT
+	Açıklama:	Medya kampanyalarının ROI ve ROAS hesaplamalarını yapan bir raportördür.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67844b2b864c81919fa5b08a2a47c866-adtag-roi-ve-roas-hesaplama-analizcisi-gpt
+		
+		
+		
+23	GPT Adı:	AdTAG - Tarih ve Zamanlama Uzmanı GPT
+	Açıklama:	Kampanyaların zamanlamasını optimize eden ve en uygun tarihleri belirleyen bir uzmandır.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67844a9de8988191b7d3b91d71cc0a2a-adtag-tarih-ve-zamanlama-uzmani-gpt
+		
+		
+		
+24	GPT Adı:	AdTAG - Arama Motoru (SEM) Analizcisi GPT
+	Açıklama:	SEM kampanyalarını analiz ederek detaylı raporlar sunan bir raportördür.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67844a00aa648191a55298939b9a7856-adtag-arama-motoru-sem-analizcisi-gpt
+		
+		
+		
+25	GPT Adı:	AdTAG - Display & Video Reklam Analizcisi GPT
+	Açıklama:	Display ve video reklamlarının performansını değerlendiren bir raportördür.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67844902b5b0819184950956f68b0b41-adtag-display-video-reklam-analizcisi-gpt
+		
+		
+		
+26	GPT Adı:	AdTAG - Influencer Pazarlama Analizcisi GPT
+	Açıklama:	Influencer kampanyalarının performansını değerlendiren bir raportördür.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-6784484859e08191b0fd086d6b36dbf9-adtag-influencer-pazarlama-analizcisi-gpt
+		
+		
+		
+27	GPT Adı:	AdTAG - Sosyal Medya Etkileşim Analizcisi GPT
+	Açıklama:	Sosyal medya kampanyalarının etkileşim performansını değerlendiren bir raportördür.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-678447e91b94819192846a231eeba225-adtag-sosyal-medya-etkilesim-analizcisi-gpt
+		
+		
+		
+28	GPT Adı:	Mobil Uygulama Kampanyası Analizcisi GPT
+	Açıklama:	Mobil uygulama reklam kampanyalarının performansını değerlendiren bir raportördür.
+	Sohbet:	1 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-678446ea87f08191a77e007058e1f06a-mobil-uygulama-kampanyasi-analizcisi-gpt
+		
+		
+		
+29	GPT Adı:	AdTAG - Web Sitesi Trafik Analizcisi GPT
+	Açıklama:	Web sitesi trafiğinin kaynaklarını ve performansını değerlendiren bir raportördür.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67844644c38c819183ff4509d4e56868-adtag-web-sitesi-trafik-analizcisi-gpt
+		
+		
+		
+30	GPT Adı:	AdTAG - Kitle Segmentasyonu Uzmanı GPT
+	Açıklama:	Hedef kitlenin demografik, coğrafi ve davranışsal segmentasyonunu yapan bir uzmandır.
+	Sohbet:	4 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-678443d6dc48819192326a71e21066fd-adtag-kitle-segmentasyonu-uzmani-gpt
+		
+		
+		
+31	GPT Adı:	DijiCrea - Marka İletişim Uzmanı GPT
+	Açıklama:	Hedef kitlenize uygun marka mesajı ve iletişim stratejisi geliştirmek için destek sunar.
+	Sohbet:	30+ Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-6784416af2908191992feaefe3e52b56-dijicrea-marka-iletisim-uzmani-gpt
+		
+		
+		
+32	GPT Adı:	Felsefoni
+	Açıklama:	Hoşgeldiniz. Lütfen diyalog kurmak istediğiniz filozofu seçin: #felsefe #filozof #philosophy
+	Sohbet:	30+ Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-678439aaf77c81918bfaa53223912023-felsefoni
+		
+		
+		
+33	GPT Adı:	Plaza Türkçesi Translate GPT
+	Açıklama:	Kurumsal Dilin Modern Yüzü
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-67840555cfd08191a251d9d6e6550d25-plaza-turkcesi-translate-gpt
+		
+		
+		
+34	GPT Adı:	Emojimatik
+	Açıklama:	Emojilendirmek istediğin metni gir
+	Sohbet:	3 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-6783ff0ffcfc8191a82633014f2093a4-emojimatik
+		
+		
+		
+35	GPT Adı:	Mibil Uygulama Fabrikası
+	Açıklama:	Yenilikçi mobil uygulama fikirleri geliştiren bir yapay zeka modeli.
+	Sohbet:	1 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-6783fda551cc8191a9578e6cd57c29f3-mibil-uygulama-fabrikasi
+		
+		
+		
+36	GPT Adı:	GPT Creator
+	Açıklama:	İnovasyon ve Yapay Zeka Tasarımı
+	Sohbet:	10+ Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-6783f9db7bcc8191a55cbbbfaca8dbb7-gpt-creator
+		
+		
+		
+37	GPT Adı:	BaristaGPT
+	Açıklama:	Sanal Baristanız
+	Sohbet:	1 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-6783f8cec6f88191bd06c63576f60f6b-baristagpt
+		
+		
+		
+38	GPT Adı:	Gemini Prompt Master
+	Açıklama:	Gemini yanıtlarını analiz ederek, beklediğiniz çıktıyı almak için gereken en uygun promptları tahmin eder ve optimize eder.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-6783f6a28f2c81919039d9ae6e30d404-gemini-prompt-master
+		
+		
+		
+39	GPT Adı:	Zeitgeist
+	Açıklama:	insanlığın tarihsel, kültürel ve ekonomik yolculuğunu ele alarak, geçmişten günümüze uzanan inanç sistemlerini, toplumsal yapıları ve zeitgeist'leri analiz eder.
+	Sohbet:	10+ Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-6783f26f1e4c819198fce7847e835c36-zeitgeist
+		
+		
+		
+40	GPT Adı:	Gurme Chef
+	Açıklama:	Gurme, dünya mutfaklarından esinlenerek lezzetleri ve hikayeleri birleştirir.
+	Sohbet:	10+ Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-6783dd59cf108191a282771614ae7a12-gurme-chef
+		
+		
+		
+41	GPT Adı:	Amazon Reklam ve Ürün Görsel Uyum İnceleme Aracı
+	Açıklama:	Amazon ve diğer platformlarda kullanılacak reklam görsellerinin ve videolarının Amazon'un yaratıcı standartlarına uygunluğunu değerlendiren, optimizasyon önerileri sunan ve reklamların performansını artırmak için tasarım önerileri sağlayan bir araçtır.
+	Sohbet:	
+	Erişim:	Sadece ben
+	Url:	https://chatgpt.com/g/g-6783d5ef8fec819196f07e8ae2047b1c-amazon-reklam-ve-urun-gorsel-uyum-inceleme-araci
+		
+		
+		
+42	GPT Adı:	NestHub Asistan
+	Açıklama:	Nest Hub yönetimi
+	Sohbet:	
+	Erişim:	Sadece ben
+	Url:	https://chatgpt.com/g/g-6782de1098d4819197e5c20c8522646b-nesthub-asistan
+		
+		
+		
+43	GPT Adı:	SinematikGPT
+	Açıklama:	Sinematik Hiper Gerçekçi Tasarımcı, kullanıcıların hayal ettiği sahneleri ve karakterleri, sinema estetiğiyle birleşen hiper gerçekçi detaylarla yaratır. Dramatik ışıklandırma, estetik kompozisyon ve etkileyici atmosferlerle tasarımlarınızı unutulmaz kılar.
+	Sohbet:	20+ Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-678287286e0c819196b372befdb1e9f3-sinematikgpt
+		
+		
+		
+44	GPT Adı:	Smart Searcher
+	Açıklama:	Kullanıcıların doğru, güvenilir ve manipülasyondan arındırılmış bilgilere ulaşmalarını sağlamak için stratejik arama desteği sunar. Her aramada, bilgi kirliliğini aşmaya yönelik özel stratejiler geliştirerek, kullanıcıya en uygun ve güvenilir kaynakları sunar.
+	Sohbet:	1 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-678275ee4f3081919de2c01c3c19e39a-smart-searcher
+		
+		
+		
+45	GPT Adı:	Seçim Günü Asistanı
+	Açıklama:	Seçim gününde seçmen ve görevlilere yardımcı olur
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-678260de539881919171d1206b01bae0-secim-gunu-asistani
+		
+		
+		
+46	GPT Adı:	Rastgele Sohbet GPT
+	Açıklama:	Konular hakkında rastgele perspektiflerden ve rastgele rollerdeki karakterler arasında sohbetler yapan AI.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-677f01b97e388191900315668ebeffe3-rastgele-sohbet-gpt
+		
+		
+		
+47	GPT Adı:	NOVA
+	Açıklama:	İlişki koçluğu alanında uzman, duygusal destek ve profesyonel rehberlik sunar.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-677f017b387c8191b1b0def501c61144-nova
+		
+		
+		
+48	GPT Adı:	StableDiffusion
+	Açıklama:	Promptları zenginleştirir, detaylandırır ve negatif unsurları filtreleyerek görsel yaratımını optimize eder.
+	Sohbet:	30+ Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677f002edff48191b25fc788eb2976c9-stablediffusion
+		
+		
+		
+49	GPT Adı:	Muscle Mentor GPT
+	Açıklama:	A coach for professional bodybuilding and fitness advice.
+	Sohbet:	1 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677efdb939b08191ba4c334817a2cd00-muscle-mentor-gpt
+		
+		
+		
+50	GPT Adı:	İstem Zengtinleştirme
+	Açıklama:	Bu GPT, girilen istemleri yeniden formüle eder ve zenginleştirir.
+	Sohbet:	
+	Erişim:	Sadece ben
+	Url:	https://chatgpt.com/g/g-677ef68cc3dc8191997abf01e70b55bb-istem-zengtinlestirme
+		
+		
+		
+51	GPT Adı:	Evren Simülatörü
+	Açıklama:	Merhaba, hangi tür evreni similasyonda deneyimlemek istersiniz?
+	Sohbet:	20+ Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677ef40253188191aee7951cff3ddfdf-evren-simulatoru
+		
+		
+		
+52	GPT Adı:	Uzay Macerası
+	Açıklama:	Kullanıcılara uzay maceraları yaşatan yapay zeka.
+	Sohbet:	20+ Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677ed73216b08191b13f804488cef65f-uzay-macerasi
+		
+		
+		
+53	GPT Adı:	Zindan Efendisi
+	Açıklama:	Zindanlar ve Ejderhalar oyunları için hikaye anlatımı ve görsel yardımlarla Zindan Efendisi.
+	Sohbet:	3 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-677ed68c2e088191b59e7ba25f2b84f9-zindan-efendisi
+		
+		
+		
+54	GPT Adı:	Eğitim Veri Seti Hazırlama Asistanı
+	Açıklama:	Yapay zeka modelleri için eğitim veri seti hazırlar
+	Sohbet:	6 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677ed63ffe308191b0dba1bace6d3f6b-egitim-veri-seti-hazirlama-asistani
+		
+		
+		
+55	GPT Adı:	Rüya Analizi
+	Açıklama:	Akademik kaynakları kullanarak rüyaları analiz eder ve duygu temelli soyut sanat eserleri oluşturur.
+	Sohbet:	2 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-677ed5cd676881918237c0324d4d94c5-ruya-analizi
+		
+		
+		
+56	GPT Adı:	KaravancıGPT
+	Açıklama:	Karavancılar için teknik bilgi sağlayan, seyahat planlamasına yardımcı olan ve karavan yaşamını daha keyifli hale getiren bir yapay zeka.
+	Sohbet:	3 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677ed5585d9c81918c979c8edfc5d1c6-karavancigpt
+		
+		
+		
+57	GPT Adı:	Kitap Yazarı Asistanı GPT
+	Açıklama:	Kullanıcıya kitap yazma sürecinde yardımcı olan, bölüm planlama, içerik üretimi ve görsel öğeler önerme gibi kapsamlı destek sunan bir model.
+	Sohbet:	100+ Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677ed4ce60e48191bfac72958b829d4c-kitap-yazari-asistani-gpt
+		
+		
+		
+58	GPT Adı:	Tartışma Bilinci
+	Açıklama:	Argümanlara derinlemesine bakış sunar, mantık hatalarını belirler ve daha sağlam bir akıl yürütme için stratejiler önerir.
+	Sohbet:	7 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677ed4548e088191a3934a5549022bf2-tartisma-bilinci
+		
+		
+		
+59	GPT Adı:	ContextMax
+	Açıklama:	Kullanıcıdan alınan parçalı bilgileri birleştirerek, en geniş bağlamı tek bir cümle içinde ifade etmeye çalışan, dinamik ve anlamlı cümleler üreten GPT modeli.
+	Sohbet:	2 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677ed413f4648191adf4cb877747543a-contextmax
+		
+		
+		
+60	GPT Adı:	Exakt
+	Açıklama:	Yanıtlar veren Yapay Zeka
+	Sohbet:	4 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677ed3c5efcc81919c841bb7824765fd-exakt
+		
+		
+		
+61	GPT Adı:	NetleştiriciGPT
+	Açıklama:	Soruların örtük varsayımlarını açığa çıkarıp, netleştirerek AI için işlenebilir hale getirir.
+	Sohbet:	2 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677ed38c8b948191bec1ec74b9b96fe0-netlestiricigpt
+		
+		
+		
+62	GPT Adı:	ThemeExpander
+	Açıklama:	Tema bilgilerine dayanarak, konular geliştirir.
+	Sohbet:	
+	Erişim:	Sadece ben
+	Url:	https://chatgpt.com/g/g-677ed218c0fc8191896259d8f7480b8b-themeexpander
+		
+		
+		
+63	GPT Adı:	Combined Audiences Creator
+	Açıklama:	Generates Combined Audiences based on specified audience themes.
+	Sohbet:	
+	Erişim:	Sadece ben
+	Url:	https://chatgpt.com/g/g-677ecffa2ea08191acc15ddbd7f9b137-combined-audiences-creator
+		
+		
+		
+64	GPT Adı:	AudiencesCreator
+	Açıklama:	Audiences oluşturmanıza yardım etmem için, temanızı Paylaşın.
+	Sohbet:	
+	Erişim:	Sadece ben
+	Url:	https://chatgpt.com/g/g-677ecee621f8819182bd696c0e35fe72-audiencescreator
+		
+		
+		
+65	GPT Adı:	KeywordExpander
+	Açıklama:	Ana tema ve alt başlıklara uygun, anahtar kelime ve varyasyon üreten model.
+	Sohbet:	
+	Erişim:	Sadece ben
+	Url:	https://chatgpt.com/g/g-677ecdab08608191b69d17c0173aa3b9-keywordexpander
+		
+		
+		
+66	GPT Adı:	GPTCreator
+	Açıklama:	Özelleştirilmiş GPT’ler için talimatlar, açıklamalar ve başlatıcılar oluşturmanıza yardımcı olur.
+	Sohbet:	1 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677ecce063e88191a8a777723d580767-gptcreator
+		
+		
+		
+67	GPT Adı:	SlideCraft
+	Açıklama:	Sunumlar ve dijital içerikler için sade, minimalist, estetik görseller üreten bir tasarım asistanı.
+	Sohbet:	5 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-677ecc8ddfa08191a3a3ed5c521a29a2-slidecraft
+		
+		
+		
+68	GPT Adı:	Etsydijital Ürün Yaratıcısı (Niş Odaklı Versiyon)
+	Açıklama:	Belirli bir niş pazara odaklanarak, müşteri sorunlarını çözen ve satış potansiyeli yüksek dijital ürün fikirleri sunan AI.
+	Sohbet:	6 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-677ecb4a7d848191a8c00f8e5a51982b-etsydijital-urun-yaraticisi-nis-odakli-versiyon
+		
+		
+		
+69	GPT Adı:	YaşamKoçuGPT
+	Açıklama:	kullanıcının belirli bir hedefe veya alana (nişe) odaklanmasını sağlayan, görevler ve stratejiler sunan bir rehber
+	Sohbet:	8 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677ec9d46a6081919853c1806a919f80-yasamkocugpt
+		
+		
+		
+70	GPT Adı:	BrandBuilderGPT
+	Açıklama:	Marka yolculuğunuz için sizi harekete geçiren motivasyonunuzu seçin.
+	Sohbet:	0 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677ec92cda1081919a64bc5962da4083-brandbuildergpt
+		
+		
+		
+71	GPT Adı:	iş yerinden bir arkadaş
+	Açıklama:	Problem mi var? Hadi, dramatik bir çözüm arayalım!
+	Sohbet:	10+ Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-677ec8737c84819193229c08068fd3f2-is-yerinden-bir-arkadas
+		
+		
+		
+72	GPT Adı:	Eleştirel Düşünce Aracı
+	Açıklama:	Argümanları derinlemesine analiz eden, manipülasyonları tespit eden ve eleştirel düşüncenizi güçlendirmek için rehberlik eden bir araçtır.
+	Sohbet:	30+ Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677ec4b3517c8191bb78f3efeebfc2b5-elestirel-dusunce-araci
+		
+		
+		
+73	GPT Adı:	AdTAG - Twitch Hedefleme Uzmanı GPT
+	Açıklama:	Twitch yayıncılarının izleyici kitlesine göre analiz yaparak hedefleme önerileri sunan bir uzmandır.
+	Sohbet:	1 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-677ec1ae9a1881919c84d6bfb48fe507-adtag-twitch-hedefleme-uzmani-gpt
+		
+		
+		
+74	GPT Adı:	UX Analyzer
+	Açıklama:	Kullanıcı dostu arayüzler inşa eder.
+	Sohbet:	4 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677ec0decd3c819191ee5aba32867368-ux-analyzer
+		
+		
+		
+75	GPT Adı:	İstemmatik
+	Açıklama:	modelin yanıtları, kullanıcının girdisinin daha net bir versiyonudur.
+	Sohbet:	10+ Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677ead138b548191a4f52e52b99a279a-istemmatik
+		
+		
+		
+76	GPT Adı:	İstem Tasarlayıcı
+	Açıklama:	Yapay zeka istemlerini düzenleyen ve optimize eden model.
+	Sohbet:	2 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677ea28cbda08191b3421d21902977d7-istem-tasarlayici
+		
+		
+		
+77	GPT Adı:	Kedi Analizcisi
+	Açıklama:	Analiz için kedinizin resimini paylaşın
+	Sohbet:	4 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-677ea1bd80648191aa09220f7d9965b1-kedi-analizcisi
+		
+		
+		
+78	GPT Adı:	Hippo Terapi Asistanı
+	Açıklama:	
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-677ea16788c88191b1b4d882ce6417a3-hippo-terapi-asistani
+		
+		
+		
+79	GPT Adı:	Meslekler Atlası - Kitap Projesi
+	Açıklama:	Gençlerin çeşitli meslekler hakkında bilgi edinmelerini sağlayan, meraklarını uyandırarak, onları düşündüren ve ilham veren kitap içerikleri hazırlayan bir GPT.
+	Sohbet:	0 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-677e9f215a908191901de767313e18bc-meslekler-atlasi-kitap-projesi
+		
+		
+		
+80	GPT Adı:	Nihil
+	Açıklama:	nihilistic perspective
+	Sohbet:	20+ Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677b0ef0fd2081918aa66fb8bff30d4f-nihil
+		
+		
+		
+81	GPT Adı:	Nihilist Uyanış
+	Açıklama:	
+	Sohbet:	3 Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-677af316b1948191892389ff02f9129b-nihilist-uyanis
+		
+		
+		
+82	GPT Adı:	Anastasia
+	Açıklama:	Bilal'in Manitası
+	Sohbet:	8 Sohbet
+	Erişim:	Bağlantısı olan herhangi biri
+	Url:	https://chatgpt.com/g/g-6776eae6c0f081918cdf8759dda5a921-anastasia
+		
+		
+		
+83	GPT Adı:	Rick
+	Açıklama:	Beni arayan bir problem mi var? Hadi başlayalım!
+	Sohbet:	100+ Sohbet
+	Erişim:	Herkes
+	Url:	https://chatgpt.com/g/g-6776af18c1cc8191ad002da9fecc1fd2-rick
+`;
+
+        function parseGPTData(textData) {
+            const entries = textData.trim().split(/\n\s*\n\s*\n/);
+            const gptList = [];
+
+            entries.forEach(entry => {
+                if (!entry.trim() || entry.trim().toLowerCase() === "gpt’lerim" || entry.trim().match(/^\d+$/)) {
+                    return; // Boş blokları, başlığı veya sadece numarayı atla
+                }
+
+                const lines = entry.trim().split('\n');
+                const gptItem = {
+                    "GPT Adı": "",
+                    "Açıklama": "",
+                    "Sohbet Sayısı": "",
+                    "Erişim Bilgisi": "",
+                    "URL": ""
+                };
+                let potentialDescription = "";
+
+                lines.forEach(line => {
+                    line = line.trim();
+                    if (line.match(/^\d+\s+GPT Adı:/)) {
+                        gptItem["GPT Adı"] = line.substring(line.indexOf("GPT Adı:") + "GPT Adı:".length).trim();
+                    } else if (line.startsWith("GPT Adı:")) {
+                        gptItem["GPT Adı"] = line.substring("GPT Adı:".length).trim();
+                    } else if (line.startsWith("Açıklama:")) {
+                        gptItem["Açıklama"] = line.substring("Açıklama:".length).trim();
+                    } else if (line.startsWith("Sohbet:")) {
+                        let sohbetContent = line.substring("Sohbet:".length).trim();
+                        // Heuristik: Eğer "Sohbet:" alanı uzun bir metinse ve tipik bir sohbet sayısı formatında değilse, Açıklama olarak değerlendir.
+                        // Özellikle 13. kayıttaki gibi durumlar için.
+                        if (sohbetContent.length > 30 && !sohbetContent.match(/^\d*\+?\s*(sohbet|chat|conversation|sohbetler)?s?$/i)) {
+                            if (!gptItem["Açıklama"]) { // Açıklama boşsa direkt ata
+                                gptItem["Açıklama"] = sohbetContent;
+                            } else { // Açıklama doluysa sonuna ekle (nadiren olmalı)
+                                gptItem["Açıklama"] += " " + sohbetContent;
+                            }
+                        } else if (sohbetContent) { // sohbetContent boş değilse normal Sohbet Sayısı olarak ata
+                           gptItem["Sohbet Sayısı"] = sohbetContent;
+                        }
+                    } else if (line.startsWith("Erişim:")) {
+                        gptItem["Erişim Bilgisi"] = line.substring("Erişim:".length).trim();
+                    } else if (line.startsWith("Url:")) {
+                        gptItem["URL"] = line.substring("Url:".length).trim();
+                    } else if (gptItem["GPT Adı"] && line && !gptItem["Açıklama"] && !line.match(/^(Sohbet:|Erişim:|Url:)/i)) {
+                         // GPT Adı bulunduysa, Açıklama henüz boşsa ve satır diğer etiketlerle başlamıyorsa, potansiyel açıklama olarak biriktir.
+                        potentialDescription += (potentialDescription ? " " : "") + line;
+                    }
                 });
+
+                // Eğer "Açıklama:" etiketiyle bir açıklama bulunamadıysa ve potansiyel açıklama varsa onu kullan
+                if (!gptItem["Açıklama"] && potentialDescription) {
+                    gptItem["Açıklama"] = potentialDescription;
+                }
+                
+                // Boş kalan alanlar için varsayılan değerler
+                gptItem["Açıklama"] = gptItem["Açıklama"].trim() || "Açıklama bulunmuyor.";
+                gptItem["Sohbet Sayısı"] = gptItem["Sohbet Sayısı"].trim() || "Bilinmiyor";
+                gptItem["Erişim Bilgisi"] = gptItem["Erişim Bilgisi"].trim() || "Bilinmiyor";
+                
+                if (gptItem["GPT Adı"] && gptItem["URL"]) {
+                    gptList.push(gptItem);
+                }
+            });
+            return gptList;
+        }
+
+        const gptData = parseGPTData(rawData);
+        // --- Bitti: Veri ve Veri Ayrıştırıcı ---
+    </script>
+
+    <script>
+        // --- Ana Script (Eski script.js içeriği) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const cardsContainer = document.getElementById('gpt-cards-container');
+            const searchBar = document.getElementById('search-bar');
+
+            if (typeof gptData === 'undefined' || !Array.isArray(gptData)) {
+                console.error('GPT verisi bulunamadı veya hatalı formatta.');
+                cardsContainer.innerHTML = "<p style='text-align:center; grid-column: 1 / -1;'>GPT verileri yüklenirken bir sorun oluştu. Lütfen `rawData` içeriğini kontrol edin.</p>";
+                return;
+            }
+            
+            // console.log("Yüklenecek GPT Sayısı:", gptData.length, gptData); // Yüklenecek kart sayısını ve içeriğini kontrol et
+
+            function renderCards(dataToRender) {
+                cardsContainer.innerHTML = ''; 
+                if (dataToRender.length === 0) {
+                    cardsContainer.innerHTML = '<p style="text-align:center; grid-column: 1 / -1;">Aramanızla eşleşen GPT bulunamadı.</p>';
+                    return;
+                }
+
+                dataToRender.forEach(gpt => {
+                    const card = document.createElement('div');
+                    card.classList.add('gpt-card');
+                    // Arama için data attribute'ları (küçük harfle sakla)
+                    card.dataset.name = gpt['GPT Adı'] ? gpt['GPT Adı'].toLowerCase() : '';
+                    card.dataset.description = gpt['Açıklama'] ? gpt['Açıklama'].toLowerCase() : '';
+
+
+                    const title = document.createElement('h3');
+                    title.textContent = gpt['GPT Adı'];
+
+                    const description = document.createElement('p');
+                    description.classList.add('description');
+                    description.textContent = gpt['Açıklama'];
+
+                    const chats = document.createElement('p');
+                    chats.classList.add('info');
+                    chats.innerHTML = `<strong>Sohbet:</strong> ${gpt['Sohbet Sayısı']}`;
+
+                    const access = document.createElement('p');
+                    access.classList.add('info');
+                    access.innerHTML = `<strong>Erişim:</strong> ${gpt['Erişim Bilgisi']}`;
+
+                    const buttonsDiv = document.createElement('div');
+                    buttonsDiv.classList.add('buttons');
+
+                    const copyButton = document.createElement('button');
+                    copyButton.classList.add('copy-btn');
+                    copyButton.textContent = 'Kopyala';
+                    copyButton.addEventListener('click', () => {
+                        if (gpt['URL']) {
+                            navigator.clipboard.writeText(gpt['URL']).then(() => {
+                                copyButton.textContent = 'Kopyalandı!';
+                                setTimeout(() => {
+                                    copyButton.textContent = 'Kopyala';
+                                }, 2000);
+                            }).catch(err => {
+                                console.error('URL kopyalanamadı: ', err);
+                                alert('URL kopyalanamadı. Lütfen konsolu kontrol edin.');
+                            });
+                        } else {
+                            alert("Bu GPT için URL bulunmuyor.");
+                        }
+                    });
+
+                    const goButton = document.createElement('button');
+                    goButton.classList.add('go-btn');
+                    goButton.textContent = 'Git';
+                    goButton.addEventListener('click', () => {
+                        if (gpt['URL']) {
+                            window.open(gpt['URL'], '_blank');
+                        } else {
+                            alert("Bu GPT için URL bulunmuyor.");
+                        }
+                    });
+
+                    buttonsDiv.appendChild(copyButton);
+                    buttonsDiv.appendChild(goButton);
+
+                    card.appendChild(title);
+                    card.appendChild(description);
+                    card.appendChild(chats);
+                    card.appendChild(access);
+                    card.appendChild(buttonsDiv);
+
+                    cardsContainer.appendChild(card);
+                });
+            }
+
+            searchBar.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase().trim();
+                const filteredData = gptData.filter(gpt => {
+                    const nameMatch = (gpt['GPT Adı'] || '').toLowerCase().includes(searchTerm);
+                    const descriptionMatch = (gpt['Açıklama'] || '').toLowerCase().includes(searchTerm);
+                    return nameMatch || descriptionMatch;
+                });
+                renderCards(filteredData);
             });
 
-            const goButton = document.createElement('button');
-            goButton.classList.add('go-btn');
-            goButton.textContent = 'Git';
-            goButton.addEventListener('click', () => {
-                window.open(gpt['URL'], '_blank');
-            });
-
-            buttonsDiv.appendChild(copyButton);
-            buttonsDiv.appendChild(goButton);
-
-            card.appendChild(title);
-            card.appendChild(description);
-            card.appendChild(chats);
-            card.appendChild(access);
-            card.appendChild(buttonsDiv);
-
-            cardsContainer.appendChild(card);
+            renderCards(gptData);
         });
-    }
-
-    // Arama fonksiyonu
-    searchBar.addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase().trim();
-        const filteredData = gptData.filter(gpt => {
-            const nameMatch = gpt['GPT Adı'].toLowerCase().includes(searchTerm);
-            const descriptionMatch = gpt['Açıklama'].toLowerCase().includes(searchTerm);
-            return nameMatch || descriptionMatch;
-        });
-        renderCards(filteredData);
-    });
-
-    // İlk render
-    renderCards(gptData);
-});
+        // --- Bitti: Ana Script ---
+    </script>
+</body>
+</html>
