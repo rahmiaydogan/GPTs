@@ -1,147 +1,94 @@
-:root {
-    --color-bg-gray: #f0f0f0; /* Yumuşak Gri */
-    --color-bg-cream: #fdfbf5; /* Yumuşak Krem */
-    --color-bg-blue: #e6f0f5;  /* Yumuşak Mavi */
-    --color-bg-white: #ffffff; /* Beyaz */
-    --color-text: #333333;
-    --color-text-light: #555555;
-    --color-shadow: rgba(0, 0, 0, 0.1);
-    --button-bg-cream: #edeae0;
-    --button-bg-blue: #cce0eb;
-    --button-text: #2c3e50;
-}
+// script.js
+document.addEventListener('DOMContentLoaded', () => {
+    const cardsContainer = document.getElementById('gpt-cards-container');
+    const searchBar = document.getElementById('search-bar');
 
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    padding: 20px;
-    background-color: var(--color-bg-gray);
-    color: var(--color-text);
-    line-height: 1.6;
-}
-
-header {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-header h1 {
-    color: var(--color-text-light);
-}
-
-#search-bar {
-    width: 80%;
-    max-width: 600px;
-    padding: 12px 15px;
-    margin-top: 10px;
-    border: 1px solid #ccc;
-    border-radius: 25px;
-    font-size: 1rem;
-    box-shadow: 0 2px 5px var(--color-shadow);
-}
-
-#search-bar:focus {
-    outline: none;
-    border-color: var(--button-bg-blue);
-    box-shadow: 0 0 8px rgba(173, 216, 230, 0.7); /* Yumuşak mavi gölge */
-}
-
-#gpt-cards-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 25px;
-    padding: 0;
-}
-
-.gpt-card {
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 5px 15px var(--color-shadow);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    min-height: 280px; /* Kartların minimum yüksekliği, içerik az olsa bile aynı hizada durmalarına yardımcı olur */
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-.gpt-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-}
-
-/* Farklı arka plan renkleri */
-.gpt-card:nth-child(4n+1) { background-color: var(--color-bg-cream); }
-.gpt-card:nth-child(4n+2) { background-color: var(--color-bg-blue); }
-.gpt-card:nth-child(4n+3) { background-color: var(--color-bg-white); }
-.gpt-card:nth-child(4n) { background-color: var(--color-bg-gray); border: 1px solid #ddd; }
-
-
-.gpt-card h3 {
-    font-weight: bold;
-    font-size: 1.25rem;
-    margin-top: 0;
-    margin-bottom: 10px;
-    color: var(--color-text);
-}
-
-.gpt-card .description {
-    font-size: 0.9rem;
-    color: var(--color-text-light);
-    margin-bottom: 15px;
-    flex-grow: 1; /* Açıklamanın kalan alanı doldurmasını sağlar */
-    overflow-y: auto; /* Uzun açıklamalarda scroll */
-    max-height: 100px; /* Açıklama max yüksekliği */
-}
-
-.gpt-card .info {
-    font-size: 0.8rem;
-    color: #777;
-    margin-bottom: 5px;
-}
-
-.gpt-card .buttons {
-    display: flex;
-    justify-content: space-between;
-    margin-top: auto; /* Butonları kartın altına iter */
-}
-
-.gpt-card button {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 0.9rem;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    min-width: 100px;
-}
-
-.gpt-card button:hover {
-    opacity: 0.85;
-}
-.gpt-card button:active {
-    transform: scale(0.98);
-}
-
-.gpt-card .copy-btn {
-    background-color: var(--button-bg-cream);
-    color: var(--button-text);
-}
-
-.gpt-card .go-btn {
-    background-color: var(--button-bg-blue);
-    color: var(--button-text);
-}
-
-/* Mobil cihazlar için daha küçük kartlar ve tek sütun */
-@media (max-width: 768px) {
-    #gpt-cards-container {
-        grid-template-columns: 1fr; /* Tek sütun */
+    // gptData'nın data.js dosyasından geldiğini varsayıyoruz
+    if (typeof gptData === 'undefined' || !Array.isArray(gptData)) {
+        console.error('GPT verisi bulunamadı veya hatalı formatta.');
+        cardsContainer.innerHTML = "<p>GPT verileri yüklenirken bir sorun oluştu.</p>";
+        return;
     }
-    .gpt-card {
-        min-height: auto; /* Yüksekliği içeriğe göre ayarla */
+    
+    // console.log("Yüklenecek GPT Sayısı:", gptData.length); // Yüklenecek kart sayısını kontrol et
+
+    function renderCards(dataToRender) {
+        cardsContainer.innerHTML = ''; // Mevcut kartları temizle
+        if (dataToRender.length === 0) {
+            cardsContainer.innerHTML = '<p style="text-align:center; grid-column: 1 / -1;">Aramanızla eşleşen GPT bulunamadı.</p>';
+            return;
+        }
+
+        dataToRender.forEach(gpt => {
+            const card = document.createElement('div');
+            card.classList.add('gpt-card');
+            card.dataset.name = gpt['GPT Adı'].toLowerCase();
+            card.dataset.description = gpt['Açıklama'].toLowerCase();
+
+            const title = document.createElement('h3');
+            title.textContent = gpt['GPT Adı'];
+
+            const description = document.createElement('p');
+            description.classList.add('description');
+            description.textContent = gpt['Açıklama'];
+
+            const chats = document.createElement('p');
+            chats.classList.add('info');
+            chats.innerHTML = `<strong>Sohbet:</strong> ${gpt['Sohbet Sayısı']}`;
+
+            const access = document.createElement('p');
+            access.classList.add('info');
+            access.innerHTML = `<strong>Erişim:</strong> ${gpt['Erişim Bilgisi']}`;
+
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.classList.add('buttons');
+
+            const copyButton = document.createElement('button');
+            copyButton.classList.add('copy-btn');
+            copyButton.textContent = 'Kopyala';
+            copyButton.addEventListener('click', () => {
+                navigator.clipboard.writeText(gpt['URL']).then(() => {
+                    copyButton.textContent = 'Kopyalandı!';
+                    setTimeout(() => {
+                        copyButton.textContent = 'Kopyala';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('URL kopyalanamadı: ', err);
+                    alert('URL kopyalanamadı. Lütfen konsolu kontrol edin.');
+                });
+            });
+
+            const goButton = document.createElement('button');
+            goButton.classList.add('go-btn');
+            goButton.textContent = 'Git';
+            goButton.addEventListener('click', () => {
+                window.open(gpt['URL'], '_blank');
+            });
+
+            buttonsDiv.appendChild(copyButton);
+            buttonsDiv.appendChild(goButton);
+
+            card.appendChild(title);
+            card.appendChild(description);
+            card.appendChild(chats);
+            card.appendChild(access);
+            card.appendChild(buttonsDiv);
+
+            cardsContainer.appendChild(card);
+        });
     }
-    #search-bar {
-        width: 90%;
-    }
-}
+
+    // Arama fonksiyonu
+    searchBar.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase().trim();
+        const filteredData = gptData.filter(gpt => {
+            const nameMatch = gpt['GPT Adı'].toLowerCase().includes(searchTerm);
+            const descriptionMatch = gpt['Açıklama'].toLowerCase().includes(searchTerm);
+            return nameMatch || descriptionMatch;
+        });
+        renderCards(filteredData);
+    });
+
+    // İlk render
+    renderCards(gptData);
+});
